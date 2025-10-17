@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="shortcut icon" href="icon.png" type="image/x-icon">
+  <link href="https://cdn.boxicons.com/fonts/animations.min.css" rel="stylesheet">
+  <title>AP visit|system</title>
+
+  <!-- jsPDF and autoTable CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #d9f0ff;
+      --card: #ffffff;
+      --text: #102a43;
+      --muted-border: #a0d8ff;
+      --muted-bg: #f0faff;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1724;
+      --card: #0b1220;
+      --text: #e6eef8;
+      --muted-border: #16324a;
+      --muted-bg: #071724;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: "Segoe UI", Roboto, system-ui;
+      background: var(--bg);
+      color: var(--text);
+      transition: background .25s, color .25s;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 8px 24px rgba(16, 42, 67, 0.12);
+    }
+    header.top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 2px solid rgb(148, 148, 185);
+      margin-bottom: 20px;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.6rem;
+      margin: 0;
+      font-weight: 700;
+      text-shadow: 1px 1px 2px rgba(163, 196, 243, 0.3);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .username-input {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--muted-bg);
+      padding: 6px;
+      border-radius: 8px;
+      border: 1.2px solid var(--muted-border);
+    }
+    .username-input input {
+      border: none;
+      background: transparent;
+      outline: none;
+      padding: 6px;
+      font-weight: 600;
+      min-width: 170px;
+      color: var(--text);
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .btn {
+      border: 0;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      transition: all .18s ease;
+    }
+    .btn-add, .btn-download, .btn-print {
+      background: linear-gradient(45deg, #4facfe, #00f2fe);
+      color: white;
+    }
+    .btn-toggle {
+      background: transparent;
+      border: 1px solid var(--muted-border);
+      padding: 8px 10px;
+      border-radius: 10px;
+    }
+    .btn:active {
+      transform: scale(.98);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid var(--muted-border);
+      text-align: left;
+      font-size: 0.8rem;
+    }
+    th {
+      background: linear-gradient(45deg, #4facfe, #00f2fe);
+      color: white;
+      font-weight: 700;
+    }
+    tbody tr:nth-child(even) {
+      background: var(--muted-bg);
+    }
+    tbody tr:hover {
+      background: #d0ebff;
+      cursor: default;
+    }
+    .action-btn {
+      border: 0;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .action-edit {
+      background: none;
+      border: 1px solid rgb(101, 190, 101);
+    }
+    .action-delete {
+      background: none;
+   
+      border: 1px solid #da947f;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+      background: rgba(3, 6, 10, 0.28);
+      z-index: 80;
+    }
+    .overlay.show {
+      display: flex;
+    }
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      background: var(--card);
+      padding: 18px;
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.35);
+    }
+    .modal h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.1rem;
+    }
+    .modal .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .modal .row.col {
+      flex-direction: column;
+    }
+    .modal input, .modal select, .modal textarea {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1.2px solid var(--muted-border);
+      width: 100%;
+      background: var(--muted-bg);
+      outline: none;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .modal .form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .btn-save {
+      background: linear-gradient(45deg, #4facfe, #00f2fe);
+      color: white;
+      border-radius: 12px;
+      padding: 9px 14px;
+      border: 0;
+    }
+    .btn-cancel {
+      background: linear-gradient(45deg, #f5f5f5, #d3d3d3);
+      color: #333;
+      border-radius: 12px;
+      padding: 9px 14px;
+      border: 0;
+    }
+    .muted {
+      font-size: 0.9rem;
+      color: rgba(16, 42, 67, 0.6);
+    }
+    .logo {
+      margin-left: -50px;
+      margin-bottom: -60px;
+    }
+    .record-count {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text);
+      align-self: center;
+      margin-left: auto;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .search-container input[type="search"] {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.2px solid var(--muted-border);
+      background: var(--muted-bg);
+      outline: none;
+      font-size: 0.95rem;
+      color: var(--text);
+      min-width: 200px;
+    }
+    .search-container button {
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(45deg, #4facfe, #00f2fe);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .search-container button:active {
+      transform: scale(0.95);
+    }
+
+ 
+
+    @media(max-width: 720px) {
+      .modal {
+        margin: 18px;
+      }
+      .username-input input {
+        min-width: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <header class="top">
+      <h1 class="logo">
+        <img src="apvisit.png" alt="School Logo" width="190" height="150">
+      </h1>
+      <div class="controls">
+        <div class="username-input" title="Enter username to include in PDFs">
+          <img src="user.png" alt=""  height="20px" width="20px">
+          <input id="username" placeholder="Username (for PDF)" />
+        </div>
+        <button class="btn btn-toggle" id="themeToggle" title="Toggle dark / light">
+          <img src="moon.png" alt="">
+        </button>
+        <div class="record-count" id="recordCount" aria-live="polite" aria-atomic="true">
+          Total Records: 0
+        </div>
+      </div>
+    </header>
+    <div class="button-group">
+      <button class="btn btn-add" id="openAdd">
+        <img src="add.png" alt="" width="15" height="15">Add Visitor
+      </button>
+      <button class="btn btn-download" id="downloadBtn">
+        <img src="down.png" alt="" width="15" height="15">Download
+      </button>
+      <button class="btn btn-print" id="printBtn">
+        <img src="print.png" alt="" width="15" height="15">Print
+      </button>
+    </div>
+
+    <div class="button-group search-container" role="search" aria-label="Search Visitors">
+      <input type="search" id="searchInput" placeholder="Search visitors..." aria-label="Search visitors" />
+      <button id="searchBtn" aria-label="Search">Search</button>
+      <button id="clearSearchBtn" aria-label="Clear Search">Clear</button>
+    </div>
+
+    <table id="visitorTable" aria-live="polite">
+      <thead>
+        <tr>
+          <th>Id</th><th>Visitor Name</th><th>Visitor_ID</th><th>Visitor Address</th><th>Student Name</th>
+          <th>Class</th><th>visitnumbers</th><th>PhoneNo</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle">Add Visitor</h2>
+      <form id="visitorForm" onsubmit="return false;">
+        <div class="row">
+          <input id="visitorName" placeholder="Visitor Name *" required />
+          <input id="visitorID" placeholder="Visitor ID (16 digits)" maxlength="16" required />
+
+        </div>
+        <div class="row">
+          <input id="visitorAddress" placeholder="Visitor Address *" required />
+          <input id="visitorPhone" placeholder="Visitor Telephone *" required />
+        </div>
+        <div class="row">
+          <input id="studentName" placeholder="Student Name *" required />
+          <input id="studentClass" placeholder="Student Class *" required />
+        </div>
+        <div class="row">
+          <input id="visitnumbers" type="number" placeholder="visitnumbers *" />
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveBtn">Save</button>
+          <button class="btn-cancel" id="cancelBtn" type="button">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'visitorData_v2';
+    const USER_KEY = 'visitorUsername_v2';
+    const THEME_KEY = 'visitorTheme_v2';
+
+    const overlay = document.getElementById('overlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const visitorForm = document.getElementById('visitorForm');
+    const tableBody = document.querySelector('#visitorTable tbody');
+    const fields = {
+      visitorName: document.getElementById('visitorName'),
+      visitorID: document.getElementById('visitorID'),
+      visitorAddress: document.getElementById('visitorAddress'),
+      visitorPhone: document.getElementById('visitorPhone'),
+      studentName: document.getElementById('studentName'),
+      studentClass: document.getElementById('studentClass'),
+      visitnumbers: document.getElementById('visitnumbers'),
+    };
+    const usernameInput = document.getElementById('username');
+
+    let editIndex = -1;
+    let filteredData = null;
+
+    function escapeHTML(s) {
+      if (!s && s !== 0) return '';
+      return String(s).replace(/[&<>"']/g, m => ({"&": "&amp;","<": "&lt;",">": "&gt;",'"': "&quot;","'": "&#39;"}[m]));
+    }
+
+    function getData() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function setData(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      displayData();
+    }
+
+    function getUsername() {
+      return localStorage.getItem(USER_KEY) || '';
+    }
+    function setUsername(name) {
+      localStorage.setItem(USER_KEY, name || '');
+    }
+    usernameInput.value = getUsername();
+    usernameInput.addEventListener('change', e => {
+      setUsername(e.target.value.trim());
+    });
+
+    const themeToggle = document.getElementById('themeToggle');
+    function applyTheme(theme) {
+      if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem(THEME_KEY, theme || 'light');
+    }
+    themeToggle.addEventListener('click', () => {
+      const current = localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+    applyTheme(localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light');
+
+    function openModal(mode = 'add', index = null) {
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      if (mode === 'add') {
+        modalTitle.textContent = 'Add Visitor';
+        visitorForm.reset();
+        editIndex = -1;
+        const today = new Date().toISOString().slice(0, 10);
+        fields.visitnumbers.value = today;
+      } else {
+        modalTitle.textContent = 'Edit Visitor';
+        editIndex = index;
+        const data = getData()[index];
+        if (data) {
+          fields.visitorName.value = data.visitorName;
+          fields.visitorID.value = data.visitorID;
+          fields.visitorAddress.value = data.visitorAddress;
+          fields.visitorPhone.value = data.visitorPhone;
+          fields.studentName.value = data.studentName;
+          fields.studentClass.value = data.studentClass;
+          fields.visitnumbers.value = data.visitnumbers;
+        }
+      }
+      setTimeout(() => fields.visitorName.focus(), 50);
+    }
+
+    function closeModal() {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+      visitorForm.reset();
+      editIndex = -1;
+    }
+
+    document.getElementById('cancelBtn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+    function displayData(data = null) {
+      const dataToShow = data === null ? getData() : data;
+      tableBody.innerHTML = '';
+      dataToShow.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${escapeHTML(item.visitorName)}</td>
+          <td>${escapeHTML(item.visitorID)}</td>
+          <td>${escapeHTML(item.visitorAddress)}</td>
+          <td>${escapeHTML(item.studentName)}</td>
+          <td>${escapeHTML(item.studentClass)}</td>
+          <td>${escapeHTML(item.visitnumbers)}</td>
+          <td>${escapeHTML(item.visitorPhone)}</td>
+          <td>
+            <button class="action-btn action-edit" data-idx="${idx}" aria-label="Edit"><img src="edit.png" alt="" height="12" width="12"></button>
+            <button class="action-btn action-delete" data-idx="${idx}" aria-label="Delete"><img src="delete.png" alt="" height="12" width="12"></button>
+          </td>`;
+        tableBody.appendChild(tr);
+      });
+      document.getElementById('recordCount').textContent = `Total Records: ${dataToShow.length}`;
+
+      tableBody.querySelectorAll('.action-edit').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = Number(e.currentTarget.dataset.idx);
+          if (filteredData !== null) {
+            const rec = filteredData[idx];
+            const realIndex = getData().findIndex(r => r === rec);
+            openModal('edit', realIndex);
+          } else openModal('edit', idx);
+        });
+      });
+
+      tableBody.querySelectorAll('.action-delete').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = Number(e.currentTarget.dataset.idx);
+          if (confirm('Delete this record?')) {
+            if (filteredData !== null) {
+              const rec = filteredData[idx];
+              const orig = getData();
+              const realIndex = orig.findIndex(r => r === rec);
+              if (realIndex > -1) {
+                orig.splice(realIndex, 1);
+                setData(orig);
+                filteredData = null;
+                document.getElementById('searchInput').value = '';
+                displayData();
+              }
+            } else {
+              const d = getData();
+              d.splice(idx, 1);
+              setData(d);
+            }
+          }
+        });
+      });
+    }
+
+    document.getElementById('openAdd').addEventListener('click', () => openModal('add'));
+
+    visitorForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const visitorName = fields.visitorName.value.trim();
+      const visitorID = fields.visitorID.value.trim();
+      const visitorAddress = fields.visitorAddress.value.trim();
+      const visitorPhone = fields.visitorPhone.value.trim();
+      const studentName = fields.studentName.value.trim();
+      const studentClass = fields.studentClass.value.trim();
+      const visitnumbers = fields.visitnumbers.value;
+      if (!visitorName || !visitorID || !visitorAddress || !visitorPhone || !studentName || !studentClass || !visitnumbers) {
+        alert('Please fill all required fields.');
+        return;
+      }
+      const data = getData();
+      if (editIndex > -1) {
+        data[editIndex] = { visitorName, visitorID, visitorAddress, visitorPhone, studentName, studentClass, visitnumbers };
+      } else {
+        data.push({ visitorName, visitorID, visitorAddress, visitorPhone, studentName, studentClass, visitnumbers });
+      }
+      setData(data);
+      filteredData = null;
+      document.getElementById('searchInput').value = '';
+      closeModal();
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+    function performSearch() {
+      const term = searchInput.value.trim().toLowerCase();
+      if (!term) {
+        filteredData = null;
+        displayData();
+        return;
+      }
+      const all = getData();
+      filteredData = all.filter(item => {
+        return Object.values(item).some(val => val.toLowerCase().includes(term));
+      });
+      displayData(filteredData);
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') performSearch(); });
+    clearSearchBtn.addEventListener('click', () => { searchInput.value = ''; filteredData = null; displayData(); });
+
+    const downloadBtn = document.getElementById('downloadBtn');
+    downloadBtn.addEventListener('click', () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const username = usernameInput.value.trim() || 'Visitor Manager';
+      doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text("School Visitor Manager Report", 10, 15);
+      doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.text(`Generated by: ${username}`, 10, 25);
+      const now = new Date().toLocaleString(); doc.text(`Visitornumbers: ${now}`, 10, 32);
+      doc.setLineWidth(0.5); doc.line(10, 36, 200, 36);
+
+      const dataToExport = filteredData !== null ? filteredData : getData();
+      const rows = dataToExport.map((row, i) => [
+        (i + 1).toString(),
+        row.visitorName,
+        row.visitorID,
+        row.visitorAddress,
+        row.studentName,
+        row.studentClass,
+        row.visitnumbers,
+        row.visitorPhone
+      ]);
+
+      doc.autoTable({
+        startY: 40,
+        head: [['ID','Visitor Name','Visitor ID','Visitor Address','Student Name','Class','Visitnumbers','Phone']],
+        body: rows,
+        styles: { fontSize: 8, cellPadding: 1 },
+        headStyles: { fillColor: [79, 172, 254], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 245, 245] }
+      });
+
+      doc.save('visitors.pdf');
+    });
+
+    const printBtn = document.getElementById('printBtn');
+    printBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim() || 'Visitor Manager';
+      const dataToPrint = filteredData !== null ? filteredData : getData();
+      const w = window.open('', '', 'height=700,width=900');
+      w.document.write('<html><head><title>Visitor List</title>');
+      w.document.write('<style>body{font-family:Arial,sans-serif;padding:27px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ddd;padding:7px;text-align:left;} th{background-color:#4facfe;color:white;} tbody tr:nth-child(even){background-color:#f2f2f2;}</style>');
+      w.document.write('</head><body>');
+      w.document.write(`<h2>Visitor List</h2><p>Generated by: ${escapeHTML(username)}</p>`);
+      w.document.write('<table><thead><tr><th>ID</th><th>Visitor Name</th><th>Visitor ID</th><th>Visitor Address</th><th>Student Name</th><th>Class</th><th>Visit numbers</th><th>Phone</th></tr></thead><tbody>');
+      dataToPrint.forEach((row,i)=>{
+        w.document.write(`<tr>
+          <td>${i+1}</td>
+          <td>${escapeHTML(row.visitorName)}</td>
+          <td>${escapeHTML(row.visitorID)}</td>
+          <td>${escapeHTML(row.visitorAddress)}</td>
+          <td>${escapeHTML(row.studentName)}</td>
+          <td>${escapeHTML(row.studentClass)}</td>
+          <td>${escapeHTML(row.visitnumbers)}</td>
+          <td>${escapeHTML(row.visitorPhone)}</td>
+        </tr>`);
+      });
+      w.document.write('</tbody></table></body></html>');
+      w.document.close(); w.print();
+    });
+
+
+
+
+    displayData();
+
+  </script>
+</body>
+</html>
