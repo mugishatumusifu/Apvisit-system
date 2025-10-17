@@ -20,8 +20,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      background: linear-gradient(135deg, #f0f5f9, #8daadb, #406ab4, #2a5298);
       overflow: hidden;
+    }
+    .logo{
+     margin-right: 100px;
     }
 
     .container {
@@ -176,6 +179,10 @@
 </head>
 <body>
 
+  <div class="logo">
+  <img src="apvisit.png" alt="">
+  </div>
+
 <div class="container">
     <div class="circle"></div>
     <div class="circle"></div>
@@ -200,26 +207,30 @@
   const VALID_USERNAME = 'student';
   const VALID_PASSWORD = 'pass123';
 
-  function login() {
+  const loginForm = document.getElementById('loginForm');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // If already logged in, go to school.html directly
+  if (localStorage.getItem("loggedIn") === "true") {
+    window.location.href = "school.html";
+  }
+
+  loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
     const user = document.getElementById('username').value.trim();
     const pass = document.getElementById('password').value;
 
     if (user === VALID_USERNAME && pass === VALID_PASSWORD) {
       localStorage.setItem('loggedIn', 'true');
       localStorage.setItem('username', user);
-      window.location.href = 'school.html'; // Redirect to system main page
+      window.location.href = 'school.html'; // redirect after login
     } else {
-      document.getElementById('error').textContent = 'Invalid username or password.';
+      errorMsg.textContent = 'Invalid username or password.';
     }
-  }
-
-  
-  // redirect visitors to login page
-  if (!localStorage.getItem("loggedInUser")) {
-    window.location.href = "school.html";
-  }
-
+  });
 </script>
+
 
 </body>
 </html>
